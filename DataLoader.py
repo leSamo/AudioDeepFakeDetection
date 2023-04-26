@@ -341,7 +341,6 @@ if __name__ == "__main__":
         path="/home/markhh/Documents/DeepFakeAudioDetection/LJ_Speech",
         feature_fn=None,
         feature_kwargs={},
-        test_size=0.2,
         use_double_delta=True,
         phone_call=False,
         pad=True,
@@ -353,7 +352,6 @@ if __name__ == "__main__":
         path="/home/markhh/Documents/DeepFakeAudioDetection/WaveFake_generated_audio/ljspeech_melgan",
         feature_fn=None,
         feature_kwargs={},
-        test_size=0.2,
         use_double_delta=True,
         phone_call=False,
         pad=True,
@@ -364,8 +362,6 @@ if __name__ == "__main__":
     dataset_train = ConcatDataset([real_dataset_train, fake_dataset_train])
     dataset_test = ConcatDataset([real_dataset_test, fake_dataset_test])
 
-    print("Train dataset:", len(dataset_train))
-    print("Test dataset:", len(dataset_test))
 
     count = 0
     audio_files = []

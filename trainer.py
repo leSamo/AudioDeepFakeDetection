@@ -166,6 +166,8 @@ class ModelTrainer(Trainer):
             # get auc and eer
             test_eer = alt_compute_eer(y_true, y_pred)
 
+            print(f"[{epoch:03d}]: loss: {round(total_loss, 4)} - train acc: {round(train_acc, 2)} - test acc: {round(test_acc, 2)} - test eer : {round(test_eer, 4)}")
+
             LOGGER.info(
                 f"[{epoch:03d}]: loss: {round(total_loss, 4)} - train acc: {round(train_acc, 2)} - test acc: {round(test_acc, 2)} - test eer : {round(test_eer, 4)}"
             )

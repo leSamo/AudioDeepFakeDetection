@@ -84,8 +84,8 @@ def init_logger(log_file: Union[Path, str]) -> None:
 
 
 def train(
-    real_dir: Union[Path, str],
-    fake_dir: Union[Path, str],
+    training_dir: Union[Path, str],
+    validation_dir: Union[Path, str],
     amount_to_use: int = None,
     epochs: int = 20,
     device: str = "cuda" if torch.cuda.is_available else "cpu",
@@ -101,10 +101,10 @@ def train(
     Train a model on WaveFake data.
 
     Args:
-        real_dir:
-            path to LJSpeech dataset directory
-        fake_dir:
-            path to WaveFake dataset directory
+        training_dir:
+            path to training dataset directory
+        validation_dir:
+            path to validation dataset directory
         amount_to_use:
             amount of data to use (if None, use all) (default: None)
         epochs:
@@ -153,22 +153,28 @@ def train(
 
     ###########################################################################
 
-    real_dir = Path(real_dir)
-    fake_dir = Path(fake_dir)
-    assert real_dir.is_dir()
-    assert fake_dir.is_dir()
-    melgan_dir = fake_dir / "ljspeech_melgan"
-    # melganLarge_dir = fake_dir / "ljspeech_melgan_large"
-    assert melgan_dir.is_dir()
-    # assert melganLarge_dir.is_dir()
+    # TODO: FIXME
+    real_train_dir = "for2sec/training/real"
+    real_val_dir = "for2sec/validation/real"
+    fake_train_dir = "for2sec/training/fake"
+    fake_val_dir = "for2sec/validation/fake"
+
+    real_train_dir = Path(real_train_dir)
+    real_val_dir = Path(real_val_dir)
+    fake_train_dir = Path(fake_train_dir)
+    fake_val_dir = Path(fake_val_dir)
+    assert real_train_dir.is_dir()
+    assert real_val_dir.is_dir()
+    assert fake_train_dir.is_dir()
+    assert fake_val_dir.is_dir()
 
     LOGGER.info("Loading data...")
 
-    real_dataset_train, real_dataset_test = load_directory_split_train_test(
-        path=real_dir,
+    _, real_dataset_train = load_directory_split_train_test(
+        path=real_train_dir,
         feature_fn=feature_fn,
         feature_kwargs={},
-        test_size=test_size,
+        test_size=1.0,
         use_double_delta=True,
         phone_call=False,
         pad=True,
@@ -176,11 +182,23 @@ def train(
         amount_to_use=amount_to_use,
     )
 
-    fake_melgan_train, fake_melgan_test = load_directory_split_train_test(
-        path=melgan_dir,
+    _, real_dataset_validate = load_directory_split_train_test(
+        path=real_val_dir,
         feature_fn=feature_fn,
         feature_kwargs={},
-        test_size=test_size,
+        test_size=1.0,
+        use_double_delta=True,
+        phone_call=False,
+        pad=True,
+        label=1,
+        amount_to_use=amount_to_use,
+    )
+
+    _, fake_dataset_train= load_directory_split_train_test(
+        path=fake_train_dir,
+        feature_fn=feature_fn,
+        feature_kwargs={},
+        test_size=1.0,
         use_double_delta=True,
         phone_call=False,
         pad=True,
@@ -188,46 +206,36 @@ def train(
         amount_to_use=amount_to_use,
     )
 
-    dataset_train, dataset_test = None, None
-    if in_distribution:
-        # ljspeech (real) and melgan (fake) are split into train and test
-        dataset_train = ConcatDataset([real_dataset_train, fake_melgan_train])
-        dataset_test = ConcatDataset([real_dataset_test, fake_melgan_test])
-        pos_weight = len(real_dataset_train) / len(fake_melgan_train)
-    else:
-        fake_dirs = list(fake_dir.glob("ljspeech_*"))
-        assert len(fake_dirs) == 7
-        # remove melgan from training data
-        fake_dirs.remove(melgan_dir)
-        # create datasets for each fake directory
-        fake_dataset_train = list(
-            map(
-                lambda _dir: load_directory_split_train_test(
-                    path=_dir,
-                    feature_fn=feature_fn,
-                    feature_kwargs={},
-                    test_size=0.01,
-                    use_double_delta=True,
-                    phone_call=False,
-                    pad=True,
-                    label=0,
-                    amount_to_use=amount_to_use,
-                )[0],
-                fake_dirs,
-            )
-        )
-        # all fake audio (except melgan) are used for training
-        fake_dataset_train = ConcatDataset(fake_dataset_train)
-        pos_weight = len(real_dataset_train) / len(fake_dataset_train)
-        # melgan is used for testing only
-        dataset_train = ConcatDataset([real_dataset_train, fake_dataset_train])
-        dataset_test = ConcatDataset([real_dataset_test, fake_melgan_test])
+    _, fake_dataset_validate = load_directory_split_train_test(
+        path=fake_val_dir,
+        feature_fn=feature_fn,
+        feature_kwargs={},
+        test_size=1.0,
+        use_double_delta=True,
+        phone_call=False,
+        pad=True,
+        label=0,
+        amount_to_use=amount_to_use,
+    )
+
+    print("real_dataset_train", len(real_dataset_train))
+    print("real_dataset_validate", len(real_dataset_validate))
+    print("fake_dataset_train", len(fake_dataset_train))
+    print("fake_dataset_validate", len(fake_dataset_validate))
+
+    dataset_train, dataset_validate = None, None
+
+    # ljspeech (real) and melgan (fake) are split into train and validate
+    dataset_train = ConcatDataset([real_dataset_train, fake_dataset_train])
+    dataset_validate = ConcatDataset([real_dataset_validate, fake_dataset_validate])
+    pos_weight = len(real_dataset_train) / len(fake_dataset_validate)
+
 
     ###########################################################################
 
     LOGGER.info(f"Training model on {len(dataset_train)} audio files.")
-    LOGGER.info(f"Testing model on  {len(dataset_test)} audio files.")
-    LOGGER.info(f"Train/Test ratio: {len(dataset_train) / len(dataset_test)}")
+    LOGGER.info(f"Testing model on  {len(dataset_validate)} audio files.")
+    LOGGER.info(f"Train/Validate ratio: {len(dataset_train) / len(dataset_validate)}")
     LOGGER.info(f"Real/Fake ratio in training: {round(pos_weight, 3)} (pos_weight)")
 
     pos_weight = torch.Tensor([pos_weight]).to(device)
@@ -246,21 +254,20 @@ def train(
         batch_size=batch_size,
         epochs=epochs,
         device=device,
-        lr=0.0001,
+        lr=0.0005,
         optimizer_kwargs={"weight_decay": 0.0001},
     ).train(
         model=model,
         dataset_train=dataset_train,
-        dataset_test=dataset_test,
+        dataset_test=dataset_validate,
         save_dir=save_dir,
         pos_weight=pos_weight,
         checkpoint=checkpoint,
     )
 
 
-def eval_only(
-    real_dir: Union[Path, str],
-    fake_dir: Union[Path, str],
+def evaluate_only(
+    testing_dir: Union[Path, str],
     amount_to_use: int = None,
     epochs: int = 20,
     device: str = "cuda" if torch.cuda.is_available else "cpu",
@@ -276,10 +283,8 @@ def eval_only(
     Train a model on WaveFake data.
 
     Args:
-        real_dir:
-            path to LJSpeech dataset directory
-        fake_dir:
-            path to WaveFake dataset directory
+        testing_dir:
+            path to testing dataset directory
         amount_to_use:
             amount of data to use (if None, use all) (default: None)
         epochs:
@@ -328,14 +333,12 @@ def eval_only(
 
     ###########################################################################
 
-    real_dir = Path(real_dir)
-    fake_dir = Path(fake_dir)
+    # TODO: FIXME
+
+    real_dir = Path("for2sec/testing/real")
+    fake_dir = Path("for2sec/testing/fake")
     assert real_dir.is_dir()
     assert fake_dir.is_dir()
-    melgan_dir = fake_dir / "ljspeech_melgan"
-    # melganLarge_dir = fake_dir / "ljspeech_melgan_large"
-    assert melgan_dir.is_dir()
-    # assert melganLarge_dir.is_dir()
 
     LOGGER.info("Loading data...")
 
@@ -343,7 +346,7 @@ def eval_only(
         path=real_dir,
         feature_fn=feature_fn,
         feature_kwargs={},
-        test_size=test_size,
+        test_size=1.0,
         use_double_delta=True,
         phone_call=False,
         pad=True,
@@ -351,11 +354,11 @@ def eval_only(
         amount_to_use=amount_to_use,
     )
 
-    _, fake_melgan_test = load_directory_split_train_test(
-        path=melgan_dir,
+    _, fake_dataset_test = load_directory_split_train_test(
+        path=fake_dir,
         feature_fn=feature_fn,
         feature_kwargs={},
-        test_size=test_size,
+        test_size=1.0,
         use_double_delta=True,
         phone_call=False,
         pad=True,
@@ -363,7 +366,7 @@ def eval_only(
         amount_to_use=amount_to_use,
     )
 
-    dataset_test = ConcatDataset([real_dataset_test, fake_melgan_test])
+    dataset_test = ConcatDataset([real_dataset_test, fake_dataset_test])
 
     ###########################################################################
 
@@ -394,8 +397,9 @@ def eval_only(
 
 def experiment(
     name: str,
-    real_dir: str,
-    fake_dir: str,
+    training_dir: str,
+    validation_dir: str,
+    testing_dir: str,
     epochs: int,
     batch_size: int,
     feature_classname: str,
@@ -427,9 +431,8 @@ def experiment(
     LOGGER.info(f"Batch size: {batch_size}, seed: {seed}, epochs: {epochs}")
 
     if eval_only:
-        eval_only(
-            real_dir=real_dir,
-            fake_dir=fake_dir,
+        evaluate_only(
+            testing_dir=testing_dir,
             amount_to_use=amount_to_use,
             epochs=epochs,
             device=device,
@@ -442,8 +445,8 @@ def experiment(
         )
     else:
         train(
-            real_dir=real_dir,
-            fake_dir=fake_dir,
+            training_dir=training_dir,
+            validation_dir=validation_dir,
             amount_to_use=amount_to_use,
             epochs=epochs,
             device=device,
@@ -487,18 +490,22 @@ def parse_args():
     parser = argparse.ArgumentParser()
 
     parser.add_argument(
-        "--real_dir",
-        "--real",
-        help="Directory containing real data. (default: 'data/real')",
+        "--training",
+        help="Directory containing training data. (default: 'for2sec/training')",
         type=str,
-        default="data/real",
+        default="for2sec/training",
     )
     parser.add_argument(
-        "--fake_dir",
-        "--fake",
-        help="Directory containing fake data. (default: 'data/fake')",
+        "--validation",
+        help="Directory containing validation data. (default: 'for2sec/validation')",
         type=str,
-        default="data/fake",
+        default="for2sec/validation",
+    )
+    parser.add_argument(
+        "--testing",
+        help="Directory containing testing data. (default: 'for2sec/testing')",
+        type=str,
+        default="for2sec/testing",
     )
 
     parser.add_argument(
@@ -586,14 +593,16 @@ def main():
 
     exp_setup = "I" if args.in_distribution else "O"
     exp_name = f"{args.model_classname}_{args.feature_classname}_{exp_setup}"
+
     if args.debug:
         exp_name = "debug"
     try:
         printc(f">>>>> Starting experiment: {exp_name}")
         experiment(
             name=exp_name,
-            real_dir=args.real_dir,
-            fake_dir=args.fake_dir,
+            training_dir=args.training,
+            validation_dir=args.validation,
+            testing_dir=args.testing,
             epochs=args.epochs,
             batch_size=args.batch_size,
             feature_classname=args.feature_classname,
