@@ -9,12 +9,12 @@ WAVE_MODELS=("WaveRNN" "WaveLSTM" "TSSD")
 CEPSTRUM_FEATURE_CLASS=("lfcc" "mfcc")
 WAVE_FEATURE_CLASS=("wave")
 
-CEPSTRUM_TRAINED_MODELS=("MLP_lfcc_I" "MLP_mfcc_I" "WaveRNN_wave_I" "WaveLSTM_wave_I" "SimpleLSTM_lfcc_I" "SimpleLSTM_mfcc_I" "ShallowCNN_lfcc_I" "ShallowCNN_mfcc_I" "TSSD_wave_I")
-WAVE_TRAINED_MODELS=("MLP_lfcc_I" "MLP_mfcc_I" "WaveRNN_wave_I" "WaveLSTM_wave_I" "SimpleLSTM_lfcc_I" "SimpleLSTM_mfcc_I" "ShallowCNN_lfcc_I" "ShallowCNN_mfcc_I" "TSSD_wave_I")
+CEPSTRUM_TRAINED_MODELS=("MLP_lfcc_I" "MLP_mfcc_I" "SimpleLSTM_lfcc_I" "SimpleLSTM_mfcc_I" "ShallowCNN_lfcc_I" "ShallowCNN_mfcc_I")
+WAVE_TRAINED_MODELS=("WaveRNN_wave_I" "WaveLSTM_wave_I" "TSSD_wave_I")
 
 TESTS=("for2sec" "for-rerecorded" "for-2sec-modif/mp3" "for-2sec-modif/ogg" "for-2sec-modif/wma" "for-2sec-modif/m4v" "for-2sec-modif/reduce" "for-2sec-modif/volume" "for-2sec-modif/bitrate" "for-2sec-modif/white" "for-2sec-modif/street" "for-2sec-modif/birds" "for-2sec-modif/downsample" "for-2sec-modif/flanger" "for-2sec-modif/overdrive" "for-2sec-modif/reverb")
 
-EPOCHS=1
+EPOCHS=20
 BATCH_SIZE=256
 SEED=42
 CUDA_VISIBLE_DEVICES=0
