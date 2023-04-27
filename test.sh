@@ -3,7 +3,7 @@
 set -e
 set -x
 
-CEPSTRUM_MODELS=("MLP" "WaveRNN" "WaveLSTM" "SimpleLSTM" "ShallowCNN" "TSSD")
+CEPSTRUM_MODELS=("MLP" "WaveRNN" "WaveLSTM" "SimpleLSTM" "ShallowCNN")
 WAVE_MODELS=("WaveRNN" "WaveLSTM" "TSSD")
 
 CEPSTRUM_FEATURE_CLASS=("lfcc" "mfcc")
@@ -12,7 +12,7 @@ WAVE_FEATURE_CLASS=("wave")
 CEPSTRUM_TRAINED_MODELS=("MLP_lfcc_I" "MLP_mfcc_I" "SimpleLSTM_lfcc_I" "SimpleLSTM_mfcc_I" "ShallowCNN_lfcc_I" "ShallowCNN_mfcc_I")
 WAVE_TRAINED_MODELS=("WaveRNN_wave_I" "WaveLSTM_wave_I" "TSSD_wave_I")
 
-TESTS=("for2sec" "for-rerecorded" "for-2sec-modif/mp3" "for-2sec-modif/ogg" "for-2sec-modif/wma" "for-2sec-modif/m4v" "for-2sec-modif/reduce" "for-2sec-modif/volume" "for-2sec-modif/bitrate" "for-2sec-modif/white" "for-2sec-modif/street" "for-2sec-modif/birds" "for-2sec-modif/downsample" "for-2sec-modif/flanger" "for-2sec-modif/overdrive" "for-2sec-modif/reverb")
+TESTS=("for2sec/testing" "for-rerecorded/testing" "for-2sec-modif/mp3" "for-2sec-modif/ogg" "for-2sec-modif/wma" "for-2sec-modif/m4v" "for-2sec-modif/reduce" "for-2sec-modif/volume" "for-2sec-modif/bitrate" "for-2sec-modif/white" "for-2sec-modif/street" "for-2sec-modif/birds" "for-2sec-modif/downsample" "for-2sec-modif/flanger" "for-2sec-modif/overdrive" "for-2sec-modif/reverb")
 
 EPOCHS=20
 BATCH_SIZE=256
@@ -39,8 +39,8 @@ for model in "${CEPSTRUM_TRAINED_MODELS[@]}";
 do
     for test in "${TESTS[@]}";
     do
-        model_classname=$(echo "$test" | awk -F "_" '{print $1}')
-        feature_class=$(echo "$test" | awk -F "_" '{print $2}')
+        model_classname=$(echo "$model" | awk -F "_" '{print $1}')
+        feature_class=$(echo "$model" | awk -F "_" '{print $2}')
 
         $TESTING_COMMAND --testing $test --feature_classname $feature_class --model_classname $model_classname
     done
@@ -60,8 +60,8 @@ for model in "${WAVE_TRAINED_MODELS[@]}";
 do
     for test in "${TESTS[@]}";
     do
-        model_classname=$(echo "$test" | awk -F "_" '{print $1}')
-        feature_class=$(echo "$test" | awk -F "_" '{print $2}')
+        model_classname=$(echo "$model" | awk -F "_" '{print $1}')
+        feature_class=$(echo "$model" | awk -F "_" '{print $2}')
 
         $TESTING_COMMAND --testing $test --feature_classname $feature_class --model_classname $model_classname
     done

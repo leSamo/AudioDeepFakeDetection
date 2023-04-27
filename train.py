@@ -1,3 +1,4 @@
+import os
 import argparse
 import json
 import logging
@@ -333,10 +334,8 @@ def evaluate_only(
 
     ###########################################################################
 
-    # TODO: FIXME
-
-    real_dir = Path("for2sec/testing/real")
-    fake_dir = Path("for2sec/testing/fake")
+    real_dir = Path(os.path.join(testing_dir, "real"))
+    fake_dir = Path(os.path.join(testing_dir, "fake"))
     assert real_dir.is_dir()
     assert fake_dir.is_dir()
 
